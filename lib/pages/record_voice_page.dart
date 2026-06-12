@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../providers/dream_provider.dart';
 import '../providers/chat_provider.dart';
 import '../theme/app_theme.dart';
@@ -14,16 +14,30 @@ class RecordVoicePage extends StatefulWidget {
 }
 
 class _RecordVoicePageState extends State<RecordVoicePage> {
-  bool _isRecording = true;
+  bool _isRecording = false;
   double _orbScale = 1.0;
   Timer? _pulseTimer;
-  final _transcript = ValueNotifier('');
+  final _transcript = TextEditingController();
+  stt.SpeechToText? _speech;
+  bool _speechAvailable = false;
 
   @override
   void initState() {
     super.initState();
-    _startPulse();
-    _simulateTranscript();
+    _initSpeech();
+  }
+
+  void _initSpeech() async {
+    _speech = stt.SpeechToText();
+    _speechAvailable = await _speech!.initialize(
+      onError: (_) => setState(() => _isRecording = false),
+      onStatus: (s) {
+        if (s == 'notListening' || s == 'done') {
+          setState(() => _isRecording = false);
+        }
+      },
+    );
+    setState(() {});
   }
 
   void _startPulse() {
@@ -34,27 +48,37 @@ class _RecordVoicePageState extends State<RecordVoicePage> {
     });
   }
 
-  void _simulateTranscript() {
-    final texts = [
-      '我在一个旧火车上，外面下很大的雨，',
-      '好像有小学同学坐在对面，',
-      '但他们都不看我……',
-      '车好像永远到不了站。',
-    ];
-    int idx = 0;
-    Timer.periodic(const Duration(milliseconds: 1500), (t) {
-      if (idx < texts.length && _isRecording) {
-        _transcript.value += texts[idx];
-        idx++;
-      } else {
-        t.cancel();
-      }
-    });
+  void _toggleRecording() async {
+    if (!_speechAvailable) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('语音识别不可用，请检查麦克风权限')),
+      );
+      return;
+    }
+
+    if (_isRecording) {
+      _speech!.stop();
+      _pulseTimer?.cancel();
+      setState(() => _isRecording = false);
+    } else {
+      setState(() => _isRecording = true);
+      _startPulse();
+      _speech!.listen(
+        onResult: (result) {
+          setState(() {
+            _transcript.text = result.recognizedWords;
+          });
+        },
+        listenFor: const Duration(minutes: 5),
+        pauseFor: const Duration(seconds: 3),
+      );
+    }
   }
 
   @override
   void dispose() {
     _pulseTimer?.cancel();
+    _speech?.cancel();
     _transcript.dispose();
     super.dispose();
   }
@@ -65,8 +89,7 @@ class _RecordVoicePageState extends State<RecordVoicePage> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topLeft, end: Alignment.bottomRight,
             colors: [Color(0xFF060914), AppTheme.bg, Color(0xFF11193A)],
           ),
         ),
@@ -103,39 +126,39 @@ class _RecordVoicePageState extends State<RecordVoicePage> {
                 children: [
                   Text('把你记得的梦先说出来', style: TextStyle(fontSize: 14, color: AppTheme.muted)),
                   const SizedBox(height: 22),
-                  AnimatedScale(
-                    scale: _orbScale,
-                    duration: const Duration(milliseconds: 600),
-                    curve: Curves.easeInOut,
-                    child: Container(
-                      width: 160, height: 160,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: RadialGradient(
-                          colors: [
-                            _isRecording ? AppTheme.primary2.withOpacity(0.75) : AppTheme.muted.withOpacity(0.4),
-                            AppTheme.primary.withOpacity(0.22),
-                            AppTheme.primary.withOpacity(0.08),
-                          ],
-                        ),
-                        boxShadow: _isRecording ? [
-                          BoxShadow(
-                            color: AppTheme.primary2.withOpacity(0.12),
-                            blurRadius: 60,
+                  GestureDetector(
+                    onTap: _toggleRecording,
+                    child: AnimatedScale(
+                      scale: _orbScale,
+                      duration: const Duration(milliseconds: 600),
+                      curve: Curves.easeInOut,
+                      child: Container(
+                        width: 160, height: 160,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: RadialGradient(
+                            colors: [
+                              _isRecording ? AppTheme.primary2.withOpacity(0.75) : AppTheme.muted.withOpacity(0.4),
+                              AppTheme.primary.withOpacity(0.22),
+                              AppTheme.primary.withOpacity(0.08),
+                            ],
                           ),
-                        ] : [],
-                      ),
-                      child: Center(
-                        child: Text(
-                          _isRecording ? '◉' : '▶',
-                          style: TextStyle(fontSize: 44, color: _isRecording ? Colors.white : AppTheme.muted),
+                          boxShadow: _isRecording ? [
+                            BoxShadow(color: AppTheme.primary2.withOpacity(0.12), blurRadius: 60),
+                          ] : [],
+                        ),
+                        child: Center(
+                          child: Text(
+                            _isRecording ? '◉' : '▶',
+                            style: TextStyle(fontSize: 44, color: _isRecording ? Colors.white : AppTheme.muted),
+                          ),
                         ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 18),
                   Text(
-                    _isRecording ? '正在记录梦境碎片...' : '录音已暂停',
+                    _isRecording ? '正在录音...' : '点击开始录音',
                     style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 8),
@@ -145,17 +168,7 @@ class _RecordVoicePageState extends State<RecordVoicePage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
-
-              Container(
-                height: 52,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  color: const Color(0x0FFFFFFF),
-                ),
-                child: CustomPaint(painter: _WavePainter()),
-              ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
 
               Container(
                 padding: const EdgeInsets.all(16),
@@ -168,12 +181,16 @@ class _RecordVoicePageState extends State<RecordVoicePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text('实时转写', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 8),
-                    ValueListenableBuilder<String>(
-                      valueListenable: _transcript,
-                      builder: (_, text, __) => Text(
-                        '"${text.isEmpty ? '等待中...' : text}"',
-                        style: TextStyle(fontSize: 14, height: 1.6, color: AppTheme.muted),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _transcript,
+                      maxLines: 6,
+                      style: const TextStyle(fontSize: 14, height: 1.6),
+                      decoration: InputDecoration(
+                        border: InputBorder.none,
+                        hintText: _isRecording ? '正在听你说...' : '点击上方按钮开始录音，或直接在此输入...',
+                        fillColor: Colors.transparent,
+                        filled: false,
                       ),
                     ),
                   ],
@@ -187,17 +204,18 @@ class _RecordVoicePageState extends State<RecordVoicePage> {
                     child: SizedBox(
                       height: 52,
                       child: OutlinedButton(
-                        onPressed: () => setState(() {
-                          _isRecording = !_isRecording;
-                          _transcript.value = '';
-                          if (_isRecording) _simulateTranscript();
-                        }),
+                        onPressed: () {
+                          _transcript.clear();
+                          setState(() => _isRecording = false);
+                          _speech?.stop();
+                          _pulseTimer?.cancel();
+                        },
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppTheme.text,
                           side: const BorderSide(color: AppTheme.line),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         ),
-                        child: Text(_isRecording ? '暂停' : '重新录制'),
+                        child: const Text('重新录制'),
                       ),
                     ),
                   ),
@@ -206,11 +224,12 @@ class _RecordVoicePageState extends State<RecordVoicePage> {
                     child: SizedBox(
                       height: 52,
                       child: ElevatedButton(
-                        onPressed: () {
+                        onPressed: _transcript.text.trim().isEmpty ? null : () {
                           final dp = context.read<DreamProvider>();
                           final cp = context.read<ChatProvider>();
-                          dp.createNewDream(rawText: _transcript.value.isNotEmpty ? _transcript.value : '我在一个旧火车上...');
-                          cp.startChat(_transcript.value.isNotEmpty ? _transcript.value : '我在一个旧火车上...');
+                          final text = _transcript.text.trim();
+                          dp.createNewDream(rawText: text);
+                          cp.startChat(text);
                           Navigator.pushNamed(context, '/ai-chat');
                         },
                         child: const Text('继续下一步'),
@@ -225,24 +244,4 @@ class _RecordVoicePageState extends State<RecordVoicePage> {
       ),
     );
   }
-}
-
-class _WavePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withOpacity(0.12)
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
-
-    final rng = Random(42);
-    for (int i = 0; i < 60; i++) {
-      final x = size.width * i / 60;
-      final h = rng.nextDouble() * size.height * 0.6 + size.height * 0.2;
-      canvas.drawLine(Offset(x, h - 4), Offset(x, h + 4), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

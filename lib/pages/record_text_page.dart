@@ -12,9 +12,7 @@ class RecordTextPage extends StatefulWidget {
 }
 
 class _RecordTextPageState extends State<RecordTextPage> {
-  final _controller = TextEditingController(
-    text: '我梦到自己在一列很旧的火车上，车厢里坐着小时候的同学，但大家都不说话。窗外一直在下暴雨，车好像永远也到不了站。',
-  );
+  final _controller = TextEditingController();
   final Set<String> _selectedTags = {};
 
   @override
@@ -29,8 +27,7 @@ class _RecordTextPageState extends State<RecordTextPage> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topLeft, end: Alignment.bottomRight,
             colors: [Color(0xFF060914), AppTheme.bg, Color(0xFF11193A)],
           ),
         ),
@@ -80,7 +77,7 @@ class _RecordTextPageState extends State<RecordTextPage> {
                       style: const TextStyle(fontSize: 15, height: 1.6),
                       decoration: const InputDecoration(
                         border: InputBorder.none,
-                        hintText: '写下你记得的梦...',
+                        hintText: '写下你记得的梦...\n\n不用一次写完整，先把最模糊但最重要的片段留下来。\n比如：场景、人物、情绪、奇怪的画面...',
                         fillColor: Colors.transparent,
                         filled: false,
                       ),
@@ -88,7 +85,7 @@ class _RecordTextPageState extends State<RecordTextPage> {
                     const SizedBox(height: 16),
                     Wrap(
                       spacing: 8,
-                      children: ['人物', '地点', '情绪', '结尾'].map((tag) {
+                      children: ['人物', '地点', '情绪', '画面', '声音', '结尾'].map((tag) {
                         final selected = _selectedTags.contains(tag);
                         return GestureDetector(
                           onTap: () => setState(() {
@@ -116,14 +113,16 @@ class _RecordTextPageState extends State<RecordTextPage> {
                         width: double.infinity,
                         padding: const EdgeInsets.all(15),
                         decoration: BoxDecoration(
-                          border: Border.all(color: AppTheme.line, style: BorderStyle.solid),
+                          border: Border.all(color: AppTheme.line),
                           borderRadius: BorderRadius.circular(16),
-                          color: Colors.transparent,
                         ),
-                        child: Text(
-                          '切换语音输入',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: AppTheme.muted, fontSize: 15, fontWeight: FontWeight.w600),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.mic, size: 18, color: AppTheme.muted),
+                            const SizedBox(width: 8),
+                            Text('切换语音输入', style: TextStyle(color: AppTheme.muted, fontSize: 15, fontWeight: FontWeight.w600)),
+                          ],
                         ),
                       ),
                     ),
@@ -135,11 +134,12 @@ class _RecordTextPageState extends State<RecordTextPage> {
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: () {
+                  onPressed: _controller.text.trim().isEmpty ? null : () {
                     final dp = context.read<DreamProvider>();
                     final cp = context.read<ChatProvider>();
-                    final dream = dp.createNewDream(rawText: _controller.text);
-                    cp.startChat(_controller.text);
+                    final text = _controller.text.trim();
+                    dp.createNewDream(rawText: text);
+                    cp.startChat(text);
                     Navigator.pushNamed(context, '/ai-chat');
                   },
                   child: const Text('交给 AI 整理'),

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import 'providers/dream_provider.dart';
 import 'providers/chat_provider.dart';
+import 'services/settings_service.dart';
 import 'pages/welcome_page.dart';
 import 'pages/home_page.dart';
 import 'pages/record_choice_page.dart';
@@ -16,6 +17,7 @@ import 'pages/publish_page.dart';
 import 'pages/square_page.dart';
 import 'pages/dream_detail_page.dart';
 import 'pages/profile_page.dart';
+import 'pages/settings_page.dart';
 import 'theme/app_theme.dart';
 
 void main() async {
@@ -24,18 +26,23 @@ void main() async {
   await Hive.openBox('dreams');
   await Hive.openBox('user');
 
-  runApp(const DailyDreamApp());
+  final settings = SettingsService();
+  await settings.init();
+
+  runApp(DailyDreamApp(settings: settings));
 }
 
 class DailyDreamApp extends StatelessWidget {
-  const DailyDreamApp({super.key});
+  final SettingsService settings;
+  const DailyDreamApp({super.key, required this.settings});
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => DreamProvider()..loadFromHive()),
-        ChangeNotifierProvider(create: (_) => ChatProvider()),
+        ChangeNotifierProvider(create: (_) => ChatProvider(settings)),
+        Provider.value(value: settings),
       ],
       child: MaterialApp(
         title: '每日梦境',
@@ -55,6 +62,7 @@ class DailyDreamApp extends StatelessWidget {
           '/square': (_) => const SquarePage(),
           '/dream-detail': (_) => const DreamDetailPage(),
           '/profile': (_) => const ProfilePage(),
+          '/settings': (_) => SettingsPage(settings: settings),
         },
       ),
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/chat_provider.dart';
+import '../providers/dream_provider.dart';
 import '../theme/app_theme.dart';
 
 class AiChatPage extends StatefulWidget {
@@ -12,10 +13,12 @@ class AiChatPage extends StatefulWidget {
 
 class _AiChatPageState extends State<AiChatPage> {
   final _inputController = TextEditingController();
+  final _scrollCtrl = ScrollController();
 
   @override
   void dispose() {
     _inputController.dispose();
+    _scrollCtrl.dispose();
     super.dispose();
   }
 
@@ -26,16 +29,27 @@ class _AiChatPageState extends State<AiChatPage> {
     _inputController.clear();
   }
 
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollCtrl.hasClients) {
+        _scrollCtrl.animateTo(_scrollCtrl.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final cp = context.watch<ChatProvider>();
+    cp.addListener(() {
+      if (cp.messages.isNotEmpty) _scrollToBottom();
+    });
 
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topLeft, end: Alignment.bottomRight,
             colors: [Color(0xFF060914), AppTheme.bg, Color(0xFF11193A)],
           ),
         ),
@@ -70,45 +84,43 @@ class _AiChatPageState extends State<AiChatPage> {
 
               Padding(
                 padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0x0FFFFFFF),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: AppTheme.line),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('已补全 ${cp.progressPercent}%', style: const TextStyle(fontSize: 14)),
-                          Text(
-                            cp.progressPercent < 80 ? '再补充 1-2 个细节更完整' : '差不多了！',
-                            style: TextStyle(fontSize: 13, color: AppTheme.muted),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(999),
-                        child: LinearProgressIndicator(
-                          value: cp.progressPercent / 100,
-                          minHeight: 8,
-                          backgroundColor: const Color(0x14FFFFFF),
-                          valueColor: const AlwaysStoppedAnimation(AppTheme.primary),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                child: _progressBar(cp),
               ),
 
               Expanded(
                 child: ListView.builder(
+                  controller: _scrollCtrl,
                   padding: const EdgeInsets.all(18),
-                  itemCount: cp.messages.length,
+                  itemCount: cp.messages.length + (cp.isAiReplying ? 1 : 0),
                   itemBuilder: (_, i) {
+                    if (i == cp.messages.length) {
+                      return Align(
+                        alignment: Alignment.centerLeft,
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: const Color(0x0FFFFFFF),
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(color: AppTheme.line),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                width: 16, height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppTheme.primary,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Text('AI 思考中...', style: TextStyle(color: AppTheme.muted, fontSize: 14)),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
                     final msg = cp.messages[i];
                     final isUser = msg.role == 'user';
                     return Align(
@@ -119,16 +131,13 @@ class _AiChatPageState extends State<AiChatPage> {
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
                           color: isUser
-                              ? LinearGradient(
-                                  colors: [AppTheme.primary.withOpacity(0.75), AppTheme.primary2.withOpacity(0.45)],
-                                ).colors.first
+                              ? AppTheme.primary.withOpacity(0.75)
                               : const Color(0x0FFFFFFF),
                           borderRadius: BorderRadius.circular(18),
                           border: isUser ? null : Border.all(color: AppTheme.line),
                         ),
                         child: Text(msg.text, style: TextStyle(
-                          fontSize: 14,
-                          height: 1.6,
+                          fontSize: 14, height: 1.6,
                           color: isUser ? Colors.white : AppTheme.text,
                         )),
                       ),
@@ -150,19 +159,21 @@ class _AiChatPageState extends State<AiChatPage> {
                     TextField(
                       controller: _inputController,
                       style: const TextStyle(fontSize: 15),
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         border: InputBorder.none,
                         hintText: '补充梦境细节...',
                         fillColor: Colors.transparent,
                         filled: false,
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.send, size: 20, color: AppTheme.primary),
+                          onPressed: _send,
+                        ),
                       ),
                       onSubmitted: (_) => _send(),
                     ),
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        _miniBtn('语音补充', Icons.mic, () {}),
-                        const SizedBox(width: 8),
                         _miniBtn('换个问题', Icons.refresh, () => cp.skipQuestion()),
                         const SizedBox(width: 8),
                         _miniBtn('跳过', Icons.skip_next, () => cp.skipQuestion()),
@@ -176,8 +187,7 @@ class _AiChatPageState extends State<AiChatPage> {
                 padding: const EdgeInsets.fromLTRB(18, 12, 18, 16),
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
+                    begin: Alignment.topCenter, end: Alignment.bottomCenter,
                     colors: [Colors.transparent, Color(0xE60A1020)],
                   ),
                 ),
@@ -185,9 +195,18 @@ class _AiChatPageState extends State<AiChatPage> {
                   width: double.infinity,
                   height: 52,
                   child: ElevatedButton(
-                    onPressed: () {
-                      cp.finalizeChat();
-                      Navigator.pushNamed(context, '/result');
+                    onPressed: cp.messages.isEmpty ? null : () async {
+                      final dp = context.read<DreamProvider>();
+                      final dream = dp.latestDream;
+                      if (dream == null) return;
+
+                      final result = await cp.finalizeAndSummarize();
+                      dream.title = result['title'] ?? dream.title;
+                      dream.fullText = result['fullText'] ?? dream.fullText;
+                      dream.tags = List<String>.from(result['tags'] ?? dream.tags);
+                      dp.updateDream(dream);
+
+                      if (mounted) Navigator.pushNamed(context, '/result');
                     },
                     child: const Text('生成整理结果'),
                   ),
@@ -196,6 +215,41 @@ class _AiChatPageState extends State<AiChatPage> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  static Widget _progressBar(ChatProvider cp) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0x0FFFFFFF),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppTheme.line),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('已补全 ${cp.progressPercent}%', style: const TextStyle(fontSize: 14)),
+              Text(
+                cp.progressPercent < 80 ? '再补充 1-2 个细节更完整' : '差不多了！',
+                style: TextStyle(fontSize: 13, color: AppTheme.muted),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              value: cp.progressPercent / 100,
+              minHeight: 8,
+              backgroundColor: const Color(0x14FFFFFF),
+              valueColor: const AlwaysStoppedAnimation(AppTheme.primary),
+            ),
+          ),
+        ],
       ),
     );
   }

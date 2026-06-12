@@ -15,8 +15,7 @@ class ProfilePage extends StatelessWidget {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topLeft, end: Alignment.bottomRight,
             colors: [Color(0xFF060914), AppTheme.bg, Color(0xFF11193A)],
           ),
         ),
@@ -50,7 +49,7 @@ class ProfilePage extends StatelessWidget {
                     ],
                   ),
                   IconButton(
-                    onPressed: () {},
+                    onPressed: () => Navigator.pushNamed(context, '/settings'),
                     icon: const Icon(Icons.settings, color: AppTheme.muted),
                   ),
                 ],
@@ -65,6 +64,14 @@ class ProfilePage extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 20),
+
+              _menuCard(context, [
+                _menuItem(Icons.tune, 'AI 设置', '配置 API Key 和模型', () => Navigator.pushNamed(context, '/settings')),
+                _menuItem(Icons.notifications_outlined, '通知设置', '梦境提醒时间', () {}),
+                _menuItem(Icons.lock_outline, '隐私设置', '匿名发布、数据导出', () {}),
+                _menuItem(Icons.info_outline, '关于', '每日梦境 v1.0', () {}),
+              ]),
+              const SizedBox(height: 14),
 
               Container(
                 padding: const EdgeInsets.all(16),
@@ -109,11 +116,7 @@ class ProfilePage extends StatelessWidget {
                               style: TextStyle(fontSize: 14, color: AppTheme.muted),
                             ),
                             Expanded(
-                              child: Text(
-                                dream.title,
-                                style: const TextStyle(fontSize: 14),
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                              child: Text(dream.title, style: const TextStyle(fontSize: 14), overflow: TextOverflow.ellipsis),
                             ),
                           ],
                         ),
@@ -145,6 +148,43 @@ class ProfilePage extends StatelessWidget {
             Text(label, style: const TextStyle(fontSize: 13, color: AppTheme.muted)),
             const SizedBox(height: 6),
             Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static Widget _menuCard(BuildContext context, List<Widget> children) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xEE121934),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.line),
+      ),
+      child: Column(children: children),
+    );
+  }
+
+  static Widget _menuItem(IconData icon, String title, String subtitle, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Icon(icon, size: 22, color: AppTheme.muted),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+                  Text(subtitle, style: TextStyle(fontSize: 12, color: AppTheme.muted)),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, size: 18, color: AppTheme.muted),
           ],
         ),
       ),
