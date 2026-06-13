@@ -15,7 +15,19 @@ class AiService {
 
   AiService(this._settings);
 
-  String get _chatUrl => '${_settings.baseUrl}/chat/completions';
+  String get _chatUrl {
+    if (_settings.mimoBaseUrl.isNotEmpty && _settings.mimoModel != 'mimo-7b') {
+      return '${_settings.mimoBaseUrl}/chat/completions';
+    }
+    return '${_settings.baseUrl}/chat/completions';
+  }
+
+  String get _currentModel {
+    if (_settings.mimoModel != 'mimo-7b') {
+      return _settings.mimoModel;
+    }
+    return _settings.model;
+  }
 
   Map<String, String> get _headers => {
         'Content-Type': 'application/json',
@@ -35,7 +47,7 @@ class AiService {
         Uri.parse(_chatUrl),
         headers: _headers,
         body: jsonEncode({
-          'model': _settings.model,
+          'model': _currentModel,
           'messages': allMessages,
           'temperature': 0.7,
           'max_tokens': 1024,
@@ -63,7 +75,7 @@ class AiService {
         Uri.parse(_chatUrl),
         headers: _headers,
         body: jsonEncode({
-          'model': _settings.model,
+          'model': _currentModel,
           'messages': [
             {
               'role': 'system',

@@ -16,6 +16,9 @@ class _SettingsPageState extends State<SettingsPage> {
   late final TextEditingController _modelCtrl;
   late final TextEditingController _imageModelCtrl;
   late final TextEditingController _promptCtrl;
+  late final TextEditingController _mimoBaseUrlCtrl;
+  late final TextEditingController _mimoModelCtrl;
+  late final TextEditingController _wanxiangKeyCtrl;
   bool _obscureKey = true;
 
   @override
@@ -26,6 +29,9 @@ class _SettingsPageState extends State<SettingsPage> {
     _modelCtrl = TextEditingController(text: widget.settings.model);
     _imageModelCtrl = TextEditingController(text: widget.settings.imageModel);
     _promptCtrl = TextEditingController(text: widget.settings.systemPrompt);
+    _mimoBaseUrlCtrl = TextEditingController(text: widget.settings.mimoBaseUrl);
+    _mimoModelCtrl = TextEditingController(text: widget.settings.mimoModel);
+    _wanxiangKeyCtrl = TextEditingController(text: widget.settings.wanxiangApiKey);
   }
 
   @override
@@ -35,6 +41,9 @@ class _SettingsPageState extends State<SettingsPage> {
     _modelCtrl.dispose();
     _imageModelCtrl.dispose();
     _promptCtrl.dispose();
+    _mimoBaseUrlCtrl.dispose();
+    _mimoModelCtrl.dispose();
+    _wanxiangKeyCtrl.dispose();
     super.dispose();
   }
 
@@ -44,6 +53,9 @@ class _SettingsPageState extends State<SettingsPage> {
     await widget.settings.setModel(_modelCtrl.text.trim());
     await widget.settings.setImageModel(_imageModelCtrl.text.trim());
     await widget.settings.setSystemPrompt(_promptCtrl.text.trim());
+    await widget.settings.setMiMoBaseUrl(_mimoBaseUrlCtrl.text.trim());
+    await widget.settings.setMiMoModel(_mimoModelCtrl.text.trim());
+    await widget.settings.setWanxiangApiKey(_wanxiangKeyCtrl.text.trim());
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('设置已保存'), backgroundColor: AppTheme.success),
@@ -107,6 +119,51 @@ class _SettingsPageState extends State<SettingsPage> {
               const SizedBox(height: 14),
 
               _section('图片模型', _imageModelCtrl, hint: '留空则不启用图片生成'),
+              const SizedBox(height: 14),
+
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xEE121934),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppTheme.line),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('MiMo API 配置', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 4),
+                    Text('小米 MiMo 模型配置（可选）', style: TextStyle(fontSize: 13, color: AppTheme.muted)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              _section('MiMo Base URL', _mimoBaseUrlCtrl, hint: 'https://api.mimo.com/v1'),
+              const SizedBox(height: 14),
+
+              _section('MiMo 模型', _mimoModelCtrl, hint: 'mimo-7b'),
+              const SizedBox(height: 14),
+
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xEE121934),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppTheme.line),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('通义万相 API 配置', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 4),
+                    Text('阿里云通义万相，用于图像/视频生成', style: TextStyle(fontSize: 13, color: AppTheme.muted)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              _section('通义万相 API Key', _wanxiangKeyCtrl, hint: '输入通义万相 API Key'),
               const SizedBox(height: 14),
 
               Container(

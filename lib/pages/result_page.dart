@@ -184,8 +184,8 @@ class _ResultPageState extends State<ResultPage> {
               child: SizedBox(
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: () => Navigator.pushNamed(context, '/image'),
-                  child: const Text('生成图片'),
+                  onPressed: () => Navigator.pushNamed(context, '/image-video'),
+                  child: const Text('生成图像/视频'),
                 ),
               ),
             ),
@@ -200,7 +200,7 @@ class _ResultPageState extends State<ResultPage> {
                     side: const BorderSide(color: AppTheme.line),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
-                  child: const Text('生成视频'),
+                  child: const Text('调整描述'),
                 ),
               ),
             ),
