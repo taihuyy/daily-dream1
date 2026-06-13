@@ -14,7 +14,6 @@ import 'pages/record_text_page.dart';
 import 'pages/record_voice_page.dart';
 import 'pages/ai_chat_page.dart';
 import 'pages/result_page.dart';
-import 'pages/image_page.dart';
 import 'pages/image_video_page.dart';
 import 'pages/publish_page.dart';
 import 'pages/square_page.dart';
@@ -32,7 +31,11 @@ void main() async {
   final settings = SettingsService();
   await settings.init();
 
-  final tongyiService = TongyiWanxiangService(apiKey: settings.wanxiangApiKey);
+  final tongyiService = TongyiWanxiangService(
+    apiKey: settings.dashscopeApiKey,
+    host: settings.dashscopeHost,
+    model: settings.imageModel,
+  );
 
   runApp(DailyDreamApp(settings: settings, tongyiService: tongyiService));
 }
@@ -64,7 +67,6 @@ class DailyDreamApp extends StatelessWidget {
           '/record-voice': (_) => const RecordVoicePage(),
           '/ai-chat': (_) => const AiChatPage(),
           '/result': (_) => const ResultPage(),
-          '/image': (_) => const ImagePage(),
           '/image-video': (_) => const ImageVideoPage(),
           '/publish': (_) => const PublishPage(),
           '/square': (_) => const SquarePage(),

@@ -15,23 +15,11 @@ class AiService {
 
   AiService(this._settings);
 
-  String get _chatUrl {
-    if (_settings.mimoBaseUrl.isNotEmpty && _settings.mimoModel != 'mimo-7b') {
-      return '${_settings.mimoBaseUrl}/chat/completions';
-    }
-    return '${_settings.baseUrl}/chat/completions';
-  }
-
-  String get _currentModel {
-    if (_settings.mimoModel != 'mimo-7b') {
-      return _settings.mimoModel;
-    }
-    return _settings.model;
-  }
+  String get _chatUrl => '${_settings.mimoBaseUrl}/chat/completions';
 
   Map<String, String> get _headers => {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer ${_settings.apiKey}',
+        'Authorization': 'Bearer ${_settings.mimoApiKey}',
       };
 
   Future<String> chat(List<AiMessage> messages) async {
@@ -47,7 +35,7 @@ class AiService {
         Uri.parse(_chatUrl),
         headers: _headers,
         body: jsonEncode({
-          'model': _currentModel,
+          'model': _settings.mimoModel,
           'messages': allMessages,
           'temperature': 0.7,
           'max_tokens': 1024,
@@ -58,7 +46,7 @@ class AiService {
         final data = jsonDecode(resp.body);
         return data['choices'][0]['message']['content'] ?? '抱歉，我暂时无法回复。';
       } else {
-        return 'API 错误 (${resp.statusCode}): ${resp.body}';
+        return 'API 错误 (${resp.statusCode})';
       }
     } catch (e) {
       return '网络错误: $e';
@@ -71,20 +59,23 @@ class AiService {
     }
 
     try {
+      // Use user message for prompt (verified with mini-dream)
+      final prompt = '''请将以下梦境描述改写成优美的散文，用"我"第一人称，加入感官细节和比喻，不要重复原文。
+
+梦境内容：$fullConversation
+
+请直接返回JSON：{"title":"标题","fullText":"改写后的散文","tags":["标签"],"summary":"一句话"}''';
+
       final resp = await http.post(
         Uri.parse(_chatUrl),
         headers: _headers,
         body: jsonEncode({
-          'model': _currentModel,
+          'model': _settings.mimoModel,
           'messages': [
-            {
-              'role': 'system',
-              'content': '你是梦境整理专家。根据用户的梦境描述，生成：\n1. title: 梦境标题（简短有画面感）\n2. fullText: 完整梦境文本（用第一人称，诗意但真实）\n3. tags: 关键标签数组（3-5个）\n4. summary: 一句话总结\n请用 JSON 格式回复，字段为 title, fullText, tags, summary。'
-            },
-            {'role': 'user', 'content': fullConversation},
+            {'role': 'user', 'content': prompt},
           ],
-          'temperature': 0.6,
-          'response_format': {'type': 'json_object'},
+          'temperature': 0.8,
+          'max_tokens': 1500,
         }),
       );
 

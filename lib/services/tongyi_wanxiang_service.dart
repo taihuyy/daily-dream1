@@ -1,30 +1,47 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
 
 class TongyiWanxiangService {
   final String apiKey;
-  final String baseUrl;
+  final String host;
+  final String model;
 
   TongyiWanxiangService({
     required this.apiKey,
-    this.baseUrl = 'https://dashscope.aliyuncs.com/api/v1',
+    this.host = 'https://dashscope-intl.aliyuncs.com',
+    this.model = 'qwen-image-2.0-pro',
   });
 
-  Future<String> generateImage(String prompt, {String? style, String? size}) async {
+  /// Generate image synchronously using qwen-image-2.0-pro
+  /// Returns local file path on success, empty string on failure
+  Future<String> generateImage(String prompt, {String? size}) async {
     if (apiKey.isEmpty) return '';
+
     try {
       final resp = await http.post(
-        Uri.parse('$baseUrl/services/aigc/text2image/image-synthesis'),
+        Uri.parse('$host/api/v1/services/aigc/multimodal-generation/generation'),
         headers: {
           'Authorization': 'Bearer $apiKey',
           'Content-Type': 'application/json',
-          'X-DashScope-Async': 'enable',
         },
         body: jsonEncode({
-          'model': 'wanx-v1',
-          'input': {'prompt': prompt},
+          'model': model,
+          'input': {
+            'messages': [
+              {
+                'role': 'user',
+                'content': [
+                  {'text': prompt}
+                ]
+              }
+            ]
+          },
           'parameters': {
-            'style': style ?? '<auto>',
+            'result_format': 'message',
+            'watermark': false,
+            'prompt_extend': true,
             'size': size ?? '1024*1024',
           },
         }),
@@ -32,53 +49,31 @@ class TongyiWanxiangService {
 
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body);
-        return data['output']?['task_id'] ?? '';
+        final imageUrl = data['output']?['choices']?[0]?['message']?['content']?[0]?['image'];
+        if (imageUrl != null && imageUrl.isNotEmpty) {
+          return await _downloadAndSave(imageUrl);
+        }
       }
     } catch (_) {}
     return '';
   }
 
-  Future<String> generateVideo(String prompt, {int duration = 4}) async {
-    if (apiKey.isEmpty) return '';
+  /// Download image from URL and save to local app directory
+  Future<String> _downloadAndSave(String imageUrl) async {
     try {
-      final resp = await http.post(
-        Uri.parse('$baseUrl/services/aigc/video-generation/generation'),
-        headers: {
-          'Authorization': 'Bearer $apiKey',
-          'Content-Type': 'application/json',
-          'X-DashScope-Async': 'enable',
-        },
-        body: jsonEncode({
-          'model': 'wanx-video-v1',
-          'input': {'prompt': prompt},
-          'parameters': {
-            'duration': duration,
-          },
-        }),
-      );
-
+      final resp = await http.get(Uri.parse(imageUrl));
       if (resp.statusCode == 200) {
-        final data = jsonDecode(resp.body);
-        return data['output']?['task_id'] ?? '';
+        final dir = await getApplicationDocumentsDirectory();
+        final dreamDir = Directory('${dir.path}/dream_images');
+        if (!await dreamDir.exists()) {
+          await dreamDir.create(recursive: true);
+        }
+        final fileName = 'dream_${DateTime.now().millisecondsSinceEpoch}.png';
+        final file = File('${dreamDir.path}/$fileName');
+        await file.writeAsBytes(resp.bodyBytes);
+        return file.path;
       }
     } catch (_) {}
     return '';
-  }
-
-  Future<Map<String, dynamic>> getTaskResult(String taskId) async {
-    if (apiKey.isEmpty || taskId.isEmpty) return {};
-    try {
-      final resp = await http.get(
-        Uri.parse('$baseUrl/tasks/$taskId'),
-        headers: {
-          'Authorization': 'Bearer $apiKey',
-        },
-      );
-
-      if (resp.statusCode == 200) {
-        return jsonDecode(resp.body);
-      }
-    } catch (_) {}
-    return {};
   }
 }

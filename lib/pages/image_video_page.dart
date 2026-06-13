@@ -1,4 +1,4 @@
-import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/image_video_provider.dart';
@@ -11,45 +11,29 @@ class ImageVideoPage extends StatefulWidget {
   State<ImageVideoPage> createState() => _ImageVideoPageState();
 }
 
-class _ImageVideoPageState extends State<ImageVideoPage> {
+class _ImageVideoPageState extends State<ImageVideoPage> with SingleTickerProviderStateMixin {
   final _promptController = TextEditingController();
-  String _selectedType = 'image';
-  Timer? _pollTimer;
+  late AnimationController _glowController;
+  late Animation<double> _glowAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _glowController = AnimationController(vsync: this, duration: const Duration(seconds: 3))..repeat(reverse: true);
+    _glowAnimation = Tween<double>(begin: 0.3, end: 0.8).animate(CurvedAnimation(parent: _glowController, curve: Curves.easeInOut));
+  }
 
   @override
   void dispose() {
     _promptController.dispose();
-    _pollTimer?.cancel();
+    _glowController.dispose();
     super.dispose();
   }
 
   void _generate() {
     final prompt = _promptController.text.trim();
     if (prompt.isEmpty) return;
-
-    final provider = context.read<ImageVideoProvider>();
-
-    if (_selectedType == 'image') {
-      provider.generateImage(prompt);
-    } else {
-      provider.generateVideo(prompt);
-    }
-
-    _startPolling();
-  }
-
-  void _startPolling() {
-    _pollTimer?.cancel();
-    _pollTimer = Timer.periodic(const Duration(seconds: 3), (_) async {
-      final provider = context.read<ImageVideoProvider>();
-      final result = await provider.pollTaskResult();
-      if (result != null) {
-        final status = result['output']?['task_status'];
-        if (status == 'SUCCEEDED' || status == 'FAILED') {
-          _pollTimer?.cancel();
-        }
-      }
-    });
+    context.read<ImageVideoProvider>().generateImage(prompt);
   }
 
   @override
@@ -81,18 +65,14 @@ class _ImageVideoPageState extends State<ImageVideoPage> {
                     ),
                   ),
                   const Expanded(
-                    child: Center(
-                      child: Text('生成图像/视频', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
-                    ),
+                    child: Center(child: Text('生成梦境画面', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600))),
                   ),
                   const SizedBox(width: 36),
                 ],
               ),
               const SizedBox(height: 20),
 
-              _buildTypeSelector(),
-              const SizedBox(height: 16),
-
+              // Dreamy prompt input
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -106,9 +86,7 @@ class _ImageVideoPageState extends State<ImageVideoPage> {
                   style: const TextStyle(fontSize: 15, height: 1.6),
                   decoration: InputDecoration(
                     border: InputBorder.none,
-                    hintText: _selectedType == 'image'
-                        ? '描述你想要生成的梦境画面...\n比如：一列旧火车在暴雨夜穿过无人的城市'
-                        : '描述你想要生成的梦境视频...\n比如：沉默的童年同学坐在车厢里，窗外暴雨不断',
+                    hintText: '描述你想要生成的梦境画面...\n比如：一列旧火车在暴雨夜穿过无人的城市',
                     fillColor: Colors.transparent,
                     filled: false,
                   ),
@@ -116,6 +94,7 @@ class _ImageVideoPageState extends State<ImageVideoPage> {
               ),
               const SizedBox(height: 16),
 
+              // Error display
               Consumer<ImageVideoProvider>(
                 builder: (_, provider, __) {
                   if (provider.error != null) {
@@ -134,25 +113,42 @@ class _ImageVideoPageState extends State<ImageVideoPage> {
                 },
               ),
 
+              // Generated image display (local file)
               Consumer<ImageVideoProvider>(
                 builder: (_, provider, __) {
-                  if (provider.resultUrl != null) {
+                  if (provider.localImagePath != null && provider.localImagePath!.isNotEmpty) {
                     return Column(
                       children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: Image.network(
-                            provider.resultUrl!,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              height: 200,
-                              decoration: BoxDecoration(
-                                color: const Color(0x0AFFFFFF),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: AppTheme.line),
+                        AnimatedBuilder(
+                          animation: _glowAnimation,
+                          builder: (_, child) => Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppTheme.primary.withOpacity(_glowAnimation.value * 0.3),
+                                  blurRadius: 30,
+                                  spreadRadius: 5,
+                                ),
+                              ],
+                            ),
+                            child: child,
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: Image.file(
+                              File(provider.localImagePath!),
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                height: 200,
+                                decoration: BoxDecoration(
+                                  color: const Color(0x0AFFFFFF),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(color: AppTheme.line),
+                                ),
+                                child: const Center(child: Text('图片加载失败', style: TextStyle(color: AppTheme.muted))),
                               ),
-                              child: const Center(child: Text('图片加载失败', style: TextStyle(color: AppTheme.muted))),
                             ),
                           ),
                         ),
@@ -164,18 +160,35 @@ class _ImageVideoPageState extends State<ImageVideoPage> {
                 },
               ),
 
+              // Loading indicator with dreamy animation
               Consumer<ImageVideoProvider>(
                 builder: (_, provider, __) {
                   if (provider.isLoading) {
                     return Column(
                       children: [
-                        SizedBox(
-                          width: 60, height: 60,
-                          child: CircularProgressIndicator(color: AppTheme.primary, strokeWidth: 3),
+                        AnimatedBuilder(
+                          animation: _glowAnimation,
+                          builder: (_, child) => Container(
+                            width: 80, height: 80,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: RadialGradient(
+                                colors: [
+                                  AppTheme.primary.withOpacity(_glowAnimation.value),
+                                  AppTheme.primary2.withOpacity(_glowAnimation.value * 0.5),
+                                  Colors.transparent,
+                                ],
+                              ),
+                            ),
+                            child: child,
+                          ),
+                          child: const Center(
+                            child: Icon(Icons.auto_awesome, size: 32, color: Colors.white),
+                          ),
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          _selectedType == 'image' ? '正在生成梦境画面...' : '正在生成梦境视频...',
+                          '正在生成梦境画面...',
                           style: TextStyle(color: AppTheme.muted, fontSize: 14),
                         ),
                         const SizedBox(height: 24),
@@ -186,14 +199,14 @@ class _ImageVideoPageState extends State<ImageVideoPage> {
                 },
               ),
 
+              // Generate button
               Consumer<ImageVideoProvider>(
                 builder: (_, provider, __) {
                   return SizedBox(
-                    width: double.infinity,
-                    height: 52,
+                    width: double.infinity, height: 52,
                     child: ElevatedButton(
                       onPressed: provider.isLoading ? null : _generate,
-                      child: Text(_selectedType == 'image' ? '生成图像' : '生成视频'),
+                      child: const Text('生成图像'),
                     ),
                   );
                 },
@@ -201,65 +214,6 @@ class _ImageVideoPageState extends State<ImageVideoPage> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildTypeSelector() {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: const Color(0x0AFFFFFF),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.line),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: GestureDetector(
-              onTap: () => setState(() => _selectedType = 'image'),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: _selectedType == 'image' ? AppTheme.primary.withOpacity(0.2) : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                  border: _selectedType == 'image' ? Border.all(color: AppTheme.primary.withOpacity(0.4)) : null,
-                ),
-                child: Center(
-                  child: Text(
-                    '图像',
-                    style: TextStyle(
-                      color: _selectedType == 'image' ? AppTheme.primary : AppTheme.muted,
-                      fontWeight: _selectedType == 'image' ? FontWeight.w600 : FontWeight.normal,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: GestureDetector(
-              onTap: () => setState(() => _selectedType = 'video'),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: _selectedType == 'video' ? AppTheme.primary.withOpacity(0.2) : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                  border: _selectedType == 'video' ? Border.all(color: AppTheme.primary.withOpacity(0.4)) : null,
-                ),
-                child: Center(
-                  child: Text(
-                    '视频',
-                    style: TextStyle(
-                      color: _selectedType == 'video' ? AppTheme.primary : AppTheme.muted,
-                      fontWeight: _selectedType == 'video' ? FontWeight.w600 : FontWeight.normal,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

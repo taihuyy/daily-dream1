@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/dream_animations.dart';
 import '../theme/app_theme.dart';
 
 class RecordChoicePage extends StatelessWidget {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/dream_provider.dart';
 import '../widgets/bottom_nav.dart';
+import '../widgets/dream_animations.dart';
 import '../theme/app_theme.dart';
 
 class SquarePage extends StatelessWidget {

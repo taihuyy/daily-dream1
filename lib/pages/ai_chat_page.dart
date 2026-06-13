@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/chat_provider.dart';
 import '../providers/dream_provider.dart';
+import '../widgets/dream_animations.dart';
 import '../theme/app_theme.dart';
 
 class AiChatPage extends StatefulWidget {
@@ -46,16 +47,13 @@ class _AiChatPageState extends State<AiChatPage> {
     });
 
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft, end: Alignment.bottomRight,
-            colors: [Color(0xFF060914), AppTheme.bg, Color(0xFF11193A)],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
+      body: DreamBackground(
+        child: Stack(
+          children: [
+            const DreamParticles(count: 10, color: AppTheme.primary2),
+            SafeArea(
+              child: Column(
+                children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(18, 8, 18, 0),
                 child: Row(
@@ -215,6 +213,8 @@ class _AiChatPageState extends State<AiChatPage> {
             ],
           ),
         ),
+        ],
+      ),
       ),
     );
   }
