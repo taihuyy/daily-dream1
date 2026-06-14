@@ -49,19 +49,28 @@ class Dream {
         'shares': shares,
       };
 
-  factory Dream.fromMap(Map<String, dynamic> m) => Dream(
-        id: m['id'],
-        title: m['title'] ?? '',
-        rawText: m['rawText'] ?? '',
-        fullText: m['fullText'] ?? '',
-        tags: List<String>.from(m['tags'] ?? []),
-        imageUrl: m['imageUrl'],
-        createdAt: DateTime.parse(m['createdAt']),
-        isPublished: m['isPublished'] ?? false,
-        isAnonymous: m['isAnonymous'] ?? true,
-        feeling: m['feeling'],
-        likes: m['likes'] ?? 0,
-        comments: m['comments'] ?? 0,
-        shares: m['shares'] ?? 0,
-      );
+  factory Dream.fromMap(Map<String, dynamic> m) {
+    DateTime parsedCreatedAt;
+    try {
+      parsedCreatedAt = DateTime.parse(m['createdAt']?.toString() ?? '');
+    } catch (_) {
+      parsedCreatedAt = DateTime.now();
+    }
+
+    return Dream(
+      id: m['id']?.toString() ?? const Uuid().v4(),
+      title: m['title']?.toString() ?? '',
+      rawText: m['rawText']?.toString() ?? '',
+      fullText: m['fullText']?.toString() ?? '',
+      tags: m['tags'] is List ? List<String>.from(m['tags']) : [],
+      imageUrl: m['imageUrl']?.toString(),
+      createdAt: parsedCreatedAt,
+      isPublished: m['isPublished'] == true,
+      isAnonymous: m['isAnonymous'] != false,
+      feeling: m['feeling']?.toString(),
+      likes: m['likes'] is int ? m['likes'] : 0,
+      comments: m['comments'] is int ? m['comments'] : 0,
+      shares: m['shares'] is int ? m['shares'] : 0,
+    );
+  }
 }

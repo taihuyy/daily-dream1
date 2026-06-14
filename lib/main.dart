@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
 
@@ -24,9 +25,19 @@ import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Hive.initFlutter();
-  await Hive.openBox('dreams');
-  await Hive.openBox('user');
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light,
+  ));
+
+  try {
+    await Hive.initFlutter();
+    await Hive.openBox('dreams');
+    await Hive.openBox('user');
+    await Hive.openBox('settings');
+  } catch (e) {
+    debugPrint('Hive init error: $e');
+  }
 
   final settings = SettingsService();
   await settings.init();
@@ -58,22 +69,23 @@ class DailyDreamApp extends StatelessWidget {
         title: '每日梦境',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.darkTheme,
-        initialRoute: '/welcome',
-        routes: {
-          '/welcome': (_) => const WelcomePage(),
-          '/home': (_) => const HomePage(),
-          '/record-choice': (_) => const RecordChoicePage(),
-          '/record-text': (_) => const RecordTextPage(),
-          '/record-voice': (_) => const RecordVoicePage(),
-          '/ai-chat': (_) => const AiChatPage(),
-          '/result': (_) => const ResultPage(),
-          '/image-video': (_) => const ImageVideoPage(),
-          '/publish': (_) => const PublishPage(),
-          '/square': (_) => const SquarePage(),
-          '/dream-detail': (_) => const DreamDetailPage(),
-          '/profile': (_) => const ProfilePage(),
-          '/settings': (_) => SettingsPage(settings: settings),
+        builder: (context, child) {
+          ErrorWidget.builder = (error) => Material(
+            color: const Color(0xFF0A1020),
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  '加载中...\n$error',
+                  style: const TextStyle(color: Colors.white70, fontSize: 14),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          );
+          return child ?? const SizedBox.shrink();
         },
+        home: const WelcomePage(),
       ),
     );
   }

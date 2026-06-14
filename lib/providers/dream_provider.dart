@@ -4,7 +4,7 @@ import '../models/dream.dart';
 import '../data/mock_data.dart';
 
 class DreamProvider extends ChangeNotifier {
-  final Box _box = Hive.box('dreams');
+  late Box _box;
   List<Dream> _dreams = [];
 
   List<Dream> get dreams => _dreams;
@@ -14,19 +14,43 @@ class DreamProvider extends ChangeNotifier {
   int get totalDreams => _dreams.length;
   int get totalShares => _dreams.where((d) => d.isPublished).length;
 
+  DreamProvider() {
+    try {
+      _box = Hive.box('dreams');
+    } catch (_) {
+      _box = Hive.box('dreams');
+    }
+  }
+
   void loadFromHive() {
-    final raw = _box.get('dreams');
-    if (raw != null) {
-      _dreams = (raw as List).map((e) => Dream.fromMap(Map<String, dynamic>.from(e))).toList();
-    } else {
+    try {
+      final raw = _box.get('dreams');
+      if (raw != null && raw is List) {
+        _dreams = raw.map((e) {
+          try {
+            return Dream.fromMap(Map<String, dynamic>.from(e));
+          } catch (_) {
+            return null;
+          }
+        }).whereType<Dream>().toList();
+      }
+      if (_dreams.isEmpty) {
+        _dreams = MockData.dreams;
+        _saveToHive();
+      }
+    } catch (e) {
+      debugPrint('loadFromHive error: $e');
       _dreams = MockData.dreams;
-      _saveToHive();
     }
     notifyListeners();
   }
 
   void _saveToHive() {
-    _box.put('dreams', _dreams.map((d) => d.toMap()).toList());
+    try {
+      _box.put('dreams', _dreams.map((d) => d.toMap()).toList());
+    } catch (e) {
+      debugPrint('_saveToHive error: $e');
+    }
   }
 
   void addDream(Dream dream) {
