@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/dream_provider.dart';
 import '../widgets/bottom_nav.dart';
 import '../theme/app_theme.dart';
+import 'dream_detail_page.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -43,7 +44,7 @@ class ProfilePage extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text('我的梦境', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
-                          Text('连续记录 ${dp.totalDreams > 0 ? 3 : 0} 天', style: TextStyle(fontSize: 13, color: AppTheme.muted)),
+                          Text('已记录 ${dp.totalDreams} 场梦', style: TextStyle(fontSize: 13, color: AppTheme.muted)),
                         ],
                       ),
                     ],
@@ -60,15 +61,13 @@ class ProfilePage extends StatelessWidget {
                 children: [
                   _statBox('梦境总数', '${dp.totalDreams}'),
                   const SizedBox(width: 12),
-                  _statBox('获得互动', '${dp.totalDreams * 32}'),
+                  _statBox('已分享', '${dp.totalShares}'),
                 ],
               ),
               const SizedBox(height: 20),
 
-              _menuCard(context, [
+              _menuCard([
                 _menuItem(Icons.tune, 'AI 设置', '配置 API Key 和模型', () => Navigator.pushNamed(context, '/settings')),
-                _menuItem(Icons.notifications_outlined, '通知设置', '梦境提醒时间', () {}),
-                _menuItem(Icons.lock_outline, '隐私设置', '匿名发布、数据导出', () {}),
                 _menuItem(Icons.info_outline, '关于', '每日梦境 v1.0', () {}),
               ]),
               const SizedBox(height: 14),
@@ -83,42 +82,46 @@ class ProfilePage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('本周记录', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 8),
-                    Text(
-                      '周一、周三、周四都有新梦境。你最近最常出现的关键词是"雨"、"火车"、"旧同学"。',
-                      style: TextStyle(fontSize: 14, height: 1.6, color: AppTheme.muted),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 14),
-
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xEE121934),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppTheme.line),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
                     const Text('我的梦境库', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 12),
+                    if (dp.dreams.isEmpty)
+                      Text('还没有记录，去记录第一场梦吧', style: TextStyle(fontSize: 14, color: AppTheme.muted)),
                     ...dp.dreams.map((dream) =>
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Row(
-                          children: [
-                            Text(
-                              '${dream.createdAt.month.toString().padLeft(2, '0')}/${dream.createdAt.day.toString().padLeft(2, '0')} ',
-                              style: TextStyle(fontSize: 14, color: AppTheme.muted),
+                      InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => DreamDetailPage(dreamId: dream.id),
                             ),
-                            Expanded(
-                              child: Text(dream.title, style: const TextStyle(fontSize: 14), overflow: TextOverflow.ellipsis),
-                            ),
-                          ],
+                          );
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 8, height: 8,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: dream.fullText.isNotEmpty ? AppTheme.success : AppTheme.muted,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                '${dream.createdAt.month.toString().padLeft(2, '0')}/${dream.createdAt.day.toString().padLeft(2, '0')} ',
+                                style: TextStyle(fontSize: 13, color: AppTheme.muted),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  dream.title.isEmpty ? '未命名的梦' : dream.title,
+                                  style: const TextStyle(fontSize: 14),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              Icon(Icons.chevron_right, size: 16, color: AppTheme.muted),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -154,7 +157,7 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  static Widget _menuCard(BuildContext context, List<Widget> children) {
+  static Widget _menuCard(List<Widget> children) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(

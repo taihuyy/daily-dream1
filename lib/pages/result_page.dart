@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/dream_provider.dart';
 import '../providers/chat_provider.dart';
+import '../pages/image_video_page.dart';
 import '../widgets/dream_animations.dart';
 import '../theme/app_theme.dart';
 
@@ -15,6 +16,7 @@ class ResultPage extends StatefulWidget {
 class _ResultPageState extends State<ResultPage> {
   bool _isProcessing = true;
   String _title = '';
+  String _rawText = '';
   String _fullText = '';
   List<String> _tags = [];
 
@@ -32,6 +34,7 @@ class _ResultPageState extends State<ResultPage> {
     if (dream != null && dream.fullText.isNotEmpty && dream.title.isNotEmpty) {
       setState(() {
         _title = dream.title;
+        _rawText = dream.rawText;
         _fullText = dream.fullText;
         _tags = dream.tags;
         _isProcessing = false;
@@ -41,6 +44,7 @@ class _ResultPageState extends State<ResultPage> {
       if (mounted) {
         setState(() {
           _title = result['title'] ?? '一场值得记住的梦';
+          _rawText = dream?.rawText ?? '';
           _fullText = result['fullText'] ?? dream?.rawText ?? '';
           _tags = List<String>.from(result['tags'] ?? ['梦境']);
           _isProcessing = false;
@@ -91,6 +95,9 @@ class _ResultPageState extends State<ResultPage> {
   }
 
   Widget _resultView() {
+    final dp = context.read<DreamProvider>();
+    final dream = dp.latestDream;
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(18, 8, 18, 24),
       children: [
@@ -110,9 +117,7 @@ class _ResultPageState extends State<ResultPage> {
               ),
             ),
             const Expanded(
-              child: Center(
-                child: Text('整理结果', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
-              ),
+              child: Center(child: Text('整理结果', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600))),
             ),
             const SizedBox(width: 36),
           ],
@@ -137,16 +142,29 @@ class _ResultPageState extends State<ResultPage> {
         ),
         const SizedBox(height: 16),
 
-        _card(
-          Text(_title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-        ),
+        // Title
+        _card(Text(_title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold))),
         const SizedBox(height: 14),
 
+        // AI polished text
         _card(
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('完整梦境文本', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+              Row(
+                children: [
+                  const Text('AI 整理', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(colors: [AppTheme.primary, AppTheme.primary2]),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: const Text('散文', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF08101C))),
+                  ),
+                ],
+              ),
               const SizedBox(height: 12),
               Text(_fullText, style: TextStyle(fontSize: 14, height: 1.8, color: AppTheme.muted)),
             ],
@@ -154,6 +172,33 @@ class _ResultPageState extends State<ResultPage> {
         ),
         const SizedBox(height: 14),
 
+        // Original record
+        _card(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Text('原始记录', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppTheme.chip,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: const Text('原文', style: TextStyle(fontSize: 10, color: AppTheme.primary)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(_rawText, style: TextStyle(fontSize: 14, height: 1.8, color: AppTheme.text.withValues(alpha: 0.8))),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        // Tags
         _card(
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -179,14 +224,22 @@ class _ResultPageState extends State<ResultPage> {
         ),
         const SizedBox(height: 24),
 
+        // Action buttons
         Row(
           children: [
             Expanded(
               child: SizedBox(
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: () => Navigator.pushNamed(context, '/image-video'),
-                  child: const Text('生成图像/视频'),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ImageVideoPage(initialPrompt: _fullText),
+                      ),
+                    );
+                  },
+                  child: const Text('生成图像'),
                 ),
               ),
             ),
@@ -214,7 +267,11 @@ class _ResultPageState extends State<ResultPage> {
               child: SizedBox(
                 height: 52,
                 child: OutlinedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('梦境已保存'), backgroundColor: AppTheme.success),
+                    );
+                  },
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppTheme.text,
                     side: const BorderSide(color: AppTheme.line),

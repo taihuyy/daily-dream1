@@ -2,23 +2,26 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/image_video_provider.dart';
+import '../providers/dream_provider.dart';
 import '../theme/app_theme.dart';
 
 class ImageVideoPage extends StatefulWidget {
-  const ImageVideoPage({super.key});
+  final String? initialPrompt;
+  const ImageVideoPage({super.key, this.initialPrompt});
 
   @override
   State<ImageVideoPage> createState() => _ImageVideoPageState();
 }
 
 class _ImageVideoPageState extends State<ImageVideoPage> with SingleTickerProviderStateMixin {
-  final _promptController = TextEditingController();
+  late final TextEditingController _promptController;
   late AnimationController _glowController;
   late Animation<double> _glowAnimation;
 
   @override
   void initState() {
     super.initState();
+    _promptController = TextEditingController(text: widget.initialPrompt ?? '');
     _glowController = AnimationController(vsync: this, duration: const Duration(seconds: 3))..repeat(reverse: true);
     _glowAnimation = Tween<double>(begin: 0.3, end: 0.8).animate(CurvedAnimation(parent: _glowController, curve: Curves.easeInOut));
   }
@@ -72,7 +75,7 @@ class _ImageVideoPageState extends State<ImageVideoPage> with SingleTickerProvid
               ),
               const SizedBox(height: 20),
 
-              // Dreamy prompt input
+              // Prompt input
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -94,7 +97,7 @@ class _ImageVideoPageState extends State<ImageVideoPage> with SingleTickerProvid
               ),
               const SizedBox(height: 16),
 
-              // Error display
+              // Error
               Consumer<ImageVideoProvider>(
                 builder: (_, provider, __) {
                   if (provider.error != null) {
@@ -113,10 +116,20 @@ class _ImageVideoPageState extends State<ImageVideoPage> with SingleTickerProvid
                 },
               ),
 
-              // Generated image display (local file)
+              // Generated image
               Consumer<ImageVideoProvider>(
                 builder: (_, provider, __) {
                   if (provider.localImagePath != null && provider.localImagePath!.isNotEmpty) {
+                    // Save image path to current dream
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      final dp = context.read<DreamProvider>();
+                      final dream = dp.latestDream;
+                      if (dream != null && dream.imageUrl != provider.localImagePath) {
+                        dream.imageUrl = provider.localImagePath;
+                        dp.updateDream(dream);
+                      }
+                    });
+
                     return Column(
                       children: [
                         AnimatedBuilder(
@@ -127,8 +140,7 @@ class _ImageVideoPageState extends State<ImageVideoPage> with SingleTickerProvid
                               boxShadow: [
                                 BoxShadow(
                                   color: AppTheme.primary.withOpacity(_glowAnimation.value * 0.3),
-                                  blurRadius: 30,
-                                  spreadRadius: 5,
+                                  blurRadius: 30, spreadRadius: 5,
                                 ),
                               ],
                             ),
@@ -152,6 +164,8 @@ class _ImageVideoPageState extends State<ImageVideoPage> with SingleTickerProvid
                             ),
                           ),
                         ),
+                        const SizedBox(height: 12),
+                        Text('梦境图片已保存到记录中', style: TextStyle(color: AppTheme.success, fontSize: 13)),
                         const SizedBox(height: 16),
                       ],
                     );
@@ -160,7 +174,7 @@ class _ImageVideoPageState extends State<ImageVideoPage> with SingleTickerProvid
                 },
               ),
 
-              // Loading indicator with dreamy animation
+              // Loading
               Consumer<ImageVideoProvider>(
                 builder: (_, provider, __) {
                   if (provider.isLoading) {
@@ -182,15 +196,10 @@ class _ImageVideoPageState extends State<ImageVideoPage> with SingleTickerProvid
                             ),
                             child: child,
                           ),
-                          child: const Center(
-                            child: Icon(Icons.auto_awesome, size: 32, color: Colors.white),
-                          ),
+                          child: const Center(child: Icon(Icons.auto_awesome, size: 32, color: Colors.white)),
                         ),
                         const SizedBox(height: 12),
-                        Text(
-                          '正在生成梦境画面...',
-                          style: TextStyle(color: AppTheme.muted, fontSize: 14),
-                        ),
+                        Text('正在生成梦境画面...', style: TextStyle(color: AppTheme.muted, fontSize: 14)),
                         const SizedBox(height: 24),
                       ],
                     );
