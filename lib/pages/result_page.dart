@@ -54,6 +54,11 @@ class _ResultPageState extends State<ResultPage> {
           dream.title = _title;
           dream.fullText = _fullText;
           dream.tags = _tags;
+          // Set AI-generated feeling if user hasn't provided one
+          if (result['feeling'] != null && result['feeling'].toString().isNotEmpty && dream.feeling == null) {
+            dream.feeling = result['feeling'].toString();
+            dream.feelingSource = 'ai';
+          }
           dp.updateDream(dream);
         }
       }

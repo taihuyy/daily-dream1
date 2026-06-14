@@ -75,11 +75,11 @@ class AiService {
     }
 
     try {
-      final prompt = '''请将以下梦境描述改写成优美的散文，用"我"第一人称，加入感官细节和比喻，不要重复原文。
+      final prompt = '''请将以下梦境描述改写成优美的散文，用"我"第一人称，加入感官细节和比喻，不要重复原文。同时为这个梦境写一句简短的感受/心情。
 
 梦境内容：$fullConversation
 
-请直接返回JSON：{"title":"标题","fullText":"改写后的散文","tags":["标签"],"summary":"一句话"}''';
+请直接返回JSON：{"title":"标题","fullText":"改写后的散文","tags":["标签"],"summary":"一句话","feeling":"一句感受"}''';
 
       final resp = await http.post(
         Uri.parse(_chatUrl),
@@ -126,7 +126,8 @@ class AiService {
       'title': '一场值得记住的梦',
       'fullText': text,
       'tags': ['梦境', '回忆'],
-      'summary': '这是一段值得珍藏的梦境记忆。'
+      'summary': '这是一段值得珍藏的梦境记忆。',
+      'feeling': '像在雾中行走，看不清前方却不愿停下。',
     });
   }
 }

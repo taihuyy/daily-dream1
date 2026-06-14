@@ -62,10 +62,20 @@ class DreamProvider extends ChangeNotifier {
     }
   }
 
-  void publishDream(Dream dream, {String? feeling, bool anonymous = true}) {
+  void publishDream(Dream dream, {String? feeling, String? feelingSource, bool anonymous = true}) {
     dream.isPublished = true;
     dream.isAnonymous = anonymous;
+    if (feeling != null && feeling.isNotEmpty) {
+      dream.feeling = feeling;
+      dream.feelingSource = feelingSource ?? 'user';
+    }
+    _saveToHive();
+    notifyListeners();
+  }
+
+  void updateFeeling(Dream dream, String feeling) {
     dream.feeling = feeling;
+    dream.feelingSource = 'user';
     _saveToHive();
     notifyListeners();
   }

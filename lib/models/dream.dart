@@ -11,6 +11,7 @@ class Dream {
   bool isPublished;
   bool isAnonymous;
   String? feeling;
+  String? feelingSource; // 'user' or 'ai'
   int likes;
   int comments;
   int shares;
@@ -26,6 +27,7 @@ class Dream {
     this.isPublished = false,
     this.isAnonymous = true,
     this.feeling,
+    this.feelingSource,
     this.likes = 0,
     this.comments = 0,
     this.shares = 0,
@@ -44,6 +46,7 @@ class Dream {
         'isPublished': isPublished,
         'isAnonymous': isAnonymous,
         'feeling': feeling,
+        'feelingSource': feelingSource,
         'likes': likes,
         'comments': comments,
         'shares': shares,
@@ -68,6 +71,7 @@ class Dream {
       isPublished: m['isPublished'] == true,
       isAnonymous: m['isAnonymous'] != false,
       feeling: m['feeling']?.toString(),
+      feelingSource: m['feelingSource']?.toString(),
       likes: m['likes'] is int ? m['likes'] : 0,
       comments: m['comments'] is int ? m['comments'] : 0,
       shares: m['shares'] is int ? m['shares'] : 0,

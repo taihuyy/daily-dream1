@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/dream_provider.dart';
@@ -131,21 +132,19 @@ class SquarePage extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 12),
-                        Container(
-                          height: 156,
-                          decoration: BoxDecoration(
+                        if (dream.imageUrl != null && dream.imageUrl!.isNotEmpty)
+                          ClipRRect(
                             borderRadius: BorderRadius.circular(18),
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                AppTheme.primary.withOpacity(0.55),
-                                AppTheme.primary2.withOpacity(0.2),
-                              ],
+                            child: Image.file(
+                              File(dream.imageUrl!),
+                              height: 156,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => _gradientPlaceholder(),
                             ),
-                            border: Border.all(color: AppTheme.line),
-                          ),
-                        ),
+                          )
+                        else
+                          _gradientPlaceholder(),
                         const SizedBox(height: 12),
                         Text(dream.title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
                         const SizedBox(height: 4),
@@ -185,6 +184,24 @@ class SquarePage extends StatelessWidget {
         const SizedBox(width: 6),
         Text(count, style: const TextStyle(fontSize: 13, color: AppTheme.muted)),
       ],
+    );
+  }
+
+  static Widget _gradientPlaceholder() {
+    return Container(
+      height: 156,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppTheme.primary.withOpacity(0.55),
+            AppTheme.primary2.withOpacity(0.2),
+          ],
+        ),
+        border: Border.all(color: AppTheme.line),
+      ),
     );
   }
 }

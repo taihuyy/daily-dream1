@@ -11,7 +11,7 @@ class PublishPage extends StatefulWidget {
 }
 
 class _PublishPageState extends State<PublishPage> {
-  final _feelingController = TextEditingController(text: '像在跟过去的某段记忆擦肩而过。');
+  final _feelingController = TextEditingController();
   bool _anonymous = true;
   bool _public = true;
   bool _allowShare = true;
@@ -230,7 +230,7 @@ class _PublishPageState extends State<PublishPage> {
               final dp = context.read<DreamProvider>();
               final dream = dp.latestDream;
               if (dream != null) {
-                dp.publishDream(dream, feeling: _feelingController.text, anonymous: _anonymous);
+                dp.publishDream(dream, feeling: _feelingController.text, feelingSource: 'user', anonymous: _anonymous);
               }
               Navigator.pushNamedAndRemoveUntil(context, '/square', (r) => false);
             },
