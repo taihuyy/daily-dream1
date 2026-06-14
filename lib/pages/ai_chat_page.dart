@@ -17,6 +17,20 @@ class _AiChatPageState extends State<AiChatPage> {
   final _scrollCtrl = ScrollController();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final cp = context.read<ChatProvider>();
+      cp.addListener(_onChatUpdate);
+    });
+  }
+
+  void _onChatUpdate() {
+    final cp = context.read<ChatProvider>();
+    if (cp.messages.isNotEmpty) _scrollToBottom();
+  }
+
+  @override
   void dispose() {
     _inputController.dispose();
     _scrollCtrl.dispose();
@@ -42,9 +56,6 @@ class _AiChatPageState extends State<AiChatPage> {
   @override
   Widget build(BuildContext context) {
     final cp = context.watch<ChatProvider>();
-    cp.addListener(() {
-      if (cp.messages.isNotEmpty) _scrollToBottom();
-    });
 
     return Scaffold(
       body: DreamBackground(

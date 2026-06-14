@@ -24,6 +24,7 @@ class _RecordVoicePageState extends State<RecordVoicePage> {
   @override
   void initState() {
     super.initState();
+    _transcript.addListener(() => setState(() {}));
     _initSpeech();
   }
 

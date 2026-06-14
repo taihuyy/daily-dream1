@@ -45,7 +45,9 @@ class TongyiWanxiangService {
             'size': size ?? '1024*1024',
           },
         }),
-      );
+      ).timeout(const Duration(seconds: 60), onTimeout: () {
+        return http.Response('{"error":"timeout"}', 408);
+      });
 
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body);
@@ -61,7 +63,10 @@ class TongyiWanxiangService {
   /// Download image from URL and save to local app directory
   Future<String> _downloadAndSave(String imageUrl) async {
     try {
-      final resp = await http.get(Uri.parse(imageUrl));
+      final resp = await http.get(Uri.parse(imageUrl)).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () => http.Response('', 408),
+      );
       if (resp.statusCode == 200) {
         final dir = await getApplicationDocumentsDirectory();
         final dreamDir = Directory('${dir.path}/dream_images');

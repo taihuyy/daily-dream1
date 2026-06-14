@@ -7,7 +7,6 @@ import 'providers/dream_provider.dart';
 import 'providers/chat_provider.dart';
 import 'providers/image_video_provider.dart';
 import 'services/settings_service.dart';
-import 'services/tongyi_wanxiang_service.dart';
 import 'pages/welcome_page.dart';
 import 'pages/home_page.dart';
 import 'pages/record_choice_page.dart';
@@ -39,18 +38,11 @@ void main() async {
     final settings = SettingsService(settingsBox);
     await settings.init();
 
-    final tongyiService = TongyiWanxiangService(
-      apiKey: settings.dashscopeApiKey,
-      host: settings.dashscopeHost,
-      model: settings.imageModel,
-    );
-
     final dreamProvider = DreamProvider(dreamsBox);
     dreamProvider.loadFromHive();
 
     runApp(DailyDreamApp(
       settings: settings,
-      tongyiService: tongyiService,
       dreamProvider: dreamProvider,
     ));
   } catch (e, stack) {
@@ -82,12 +74,10 @@ void main() async {
 
 class DailyDreamApp extends StatelessWidget {
   final SettingsService settings;
-  final TongyiWanxiangService tongyiService;
   final DreamProvider dreamProvider;
   const DailyDreamApp({
     super.key,
     required this.settings,
-    required this.tongyiService,
     required this.dreamProvider,
   });
 
@@ -97,7 +87,7 @@ class DailyDreamApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider.value(value: dreamProvider),
         ChangeNotifierProvider(create: (_) => ChatProvider(settings)),
-        ChangeNotifierProvider(create: (_) => ImageVideoProvider(tongyiService)),
+        ChangeNotifierProvider(create: (_) => ImageVideoProvider(settings)),
         Provider.value(value: settings),
       ],
       child: MaterialApp(

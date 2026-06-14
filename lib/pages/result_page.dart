@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/dream_provider.dart';
 import '../providers/chat_provider.dart';
 import '../pages/image_video_page.dart';
+import '../pages/dream_adjustment_page.dart';
 import '../widgets/dream_animations.dart';
 import '../theme/app_theme.dart';
 
@@ -245,11 +246,27 @@ class _ResultPageState extends State<ResultPage> {
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: SizedBox(
-                height: 52,
-                child: OutlinedButton(
-                  onPressed: () {},
-                  style: OutlinedButton.styleFrom(
+                  child: SizedBox(
+                    height: 52,
+                    child: OutlinedButton(
+                      onPressed: () async {
+                        final result = await Navigator.push<String>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => DreamAdjustmentPage(initialDreamText: _rawText),
+                          ),
+                        );
+                        if (result != null && mounted) {
+                          setState(() => _fullText = result);
+                          final dp = context.read<DreamProvider>();
+                          final dream = dp.latestDream;
+                          if (dream != null) {
+                            dream.fullText = result;
+                            dp.updateDream(dream);
+                          }
+                        }
+                      },
+                      style: OutlinedButton.styleFrom(
                     foregroundColor: AppTheme.text,
                     side: const BorderSide(color: AppTheme.line),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

@@ -20,8 +20,15 @@ class _DreamAdjustmentPageState extends State<DreamAdjustmentPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ChatProvider>().startChat(widget.initialDreamText);
+      final cp = context.read<ChatProvider>();
+      cp.startChat(widget.initialDreamText);
+      cp.addListener(_onChatUpdate);
     });
+  }
+
+  void _onChatUpdate() {
+    final cp = context.read<ChatProvider>();
+    if (cp.messages.isNotEmpty) _scrollToBottom();
   }
 
   void _send() {
@@ -53,9 +60,6 @@ class _DreamAdjustmentPageState extends State<DreamAdjustmentPage> {
   @override
   Widget build(BuildContext context) {
     final cp = context.watch<ChatProvider>();
-    cp.addListener(() {
-      if (cp.messages.isNotEmpty) _scrollToBottom();
-    });
 
     return Scaffold(
       body: Container(

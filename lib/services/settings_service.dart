@@ -14,9 +14,7 @@ class SettingsService {
   SettingsService(this._box);
 
   Future<void> init() async {
-    if (_box.get(_keyMiMoApiKey) == null) {
-      await _box.put(_keyMiMoApiKey, 'tp-c6a3t7d2ce7ex92jyw2xer8obkp4i2oms7n0jn3sbhmb11yd');
-    }
+    // Base URL / Model / Host 的默认值保留（非敏感信息）
     if (_box.get(_keyMiMoBaseUrl) == null) {
       await _box.put(_keyMiMoBaseUrl, 'https://token-plan-cn.xiaomimimo.com/v1');
     }
@@ -26,15 +24,13 @@ class SettingsService {
     if (_box.get(_keySystemPrompt) == null) {
       await _box.put(_keySystemPrompt, _defaultPrompt);
     }
-    if (_box.get(_keyDashscopeApiKey) == null) {
-      await _box.put(_keyDashscopeApiKey, 'sk-ws-H.IRREIM.o7EL.MEUCIDUSIjlmET2w_QkXBWQYAlxyrFkqkTWRkRYmFWImYWMPAiEApwLdMEGA_ycV1l9ri_KcbWyA2Ee3ST4sr9lhS-EGmqs');
-    }
     if (_box.get(_keyDashscopeHost) == null) {
       await _box.put(_keyDashscopeHost, 'https://dashscope-intl.aliyuncs.com');
     }
     if (_box.get(_keyImageModel) == null) {
       await _box.put(_keyImageModel, 'qwen-image-2.0-pro');
     }
+    // API Key 不设默认值，用户必须在设置页手动填写
   }
 
   String get mimoApiKey => _box.get(_keyMiMoApiKey, defaultValue: '');

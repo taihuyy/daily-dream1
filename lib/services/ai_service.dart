@@ -10,6 +10,14 @@ class AiMessage {
   Map<String, dynamic> toMap() => {'role': role, 'content': content};
 }
 
+class AiException implements Exception {
+  final String message;
+  final String type; // 'network', 'config', 'server'
+  AiException(this.message, {this.type = 'server'});
+  @override
+  String toString() => message;
+}
+
 class AiService {
   final SettingsService _settings;
 
@@ -40,16 +48,24 @@ class AiService {
           'temperature': 0.7,
           'max_tokens': 1024,
         }),
-      );
+      ).timeout(const Duration(seconds: 30), onTimeout: () {
+        throw AiException('网络超时，请检查网络连接', type: 'network');
+      });
 
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body);
         return data['choices'][0]['message']['content'] ?? '抱歉，我暂时无法回复。';
+      } else if (resp.statusCode == 401) {
+        throw AiException('API Key 无效，请在设置中检查', type: 'config');
+      } else if (resp.statusCode == 429) {
+        throw AiException('请求过于频繁，请稍后再试', type: 'server');
       } else {
-        return 'API 错误 (${resp.statusCode})';
+        throw AiException('服务器错误 (${resp.statusCode})', type: 'server');
       }
+    } on AiException {
+      rethrow;
     } catch (e) {
-      return '网络错误: $e';
+      throw AiException('网络错误: $e', type: 'network');
     }
   }
 
@@ -59,7 +75,6 @@ class AiService {
     }
 
     try {
-      // Use user message for prompt (verified with mini-dream)
       final prompt = '''请将以下梦境描述改写成优美的散文，用"我"第一人称，加入感官细节和比喻，不要重复原文。
 
 梦境内容：$fullConversation
@@ -77,7 +92,9 @@ class AiService {
           'temperature': 0.8,
           'max_tokens': 1500,
         }),
-      );
+      ).timeout(const Duration(seconds: 30), onTimeout: () {
+        throw AiException('网络超时', type: 'network');
+      });
 
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body);

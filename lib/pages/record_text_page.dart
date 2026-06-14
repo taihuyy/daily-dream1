@@ -16,6 +16,12 @@ class _RecordTextPageState extends State<RecordTextPage> {
   final Set<String> _selectedTags = {};
 
   @override
+  void initState() {
+    super.initState();
+    _controller.addListener(() => setState(() {}));
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     super.dispose();

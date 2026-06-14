@@ -4,6 +4,7 @@ import '../providers/dream_provider.dart';
 import '../widgets/bottom_nav.dart';
 import '../widgets/dream_animations.dart';
 import '../theme/app_theme.dart';
+import 'dream_detail_page.dart';
 
 class SquarePage extends StatelessWidget {
   const SquarePage({super.key});
@@ -69,7 +70,10 @@ class SquarePage extends StatelessWidget {
 
               ...dreams.where((d) => d.isPublished).map((dream) =>
                 GestureDetector(
-                  onTap: () => Navigator.pushNamed(context, '/dream-detail'),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => DreamDetailPage(dreamId: dream.id)),
+                  ),
                   child: Container(
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.all(14),

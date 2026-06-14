@@ -24,6 +24,21 @@ class _ImageVideoPageState extends State<ImageVideoPage> with SingleTickerProvid
     _promptController = TextEditingController(text: widget.initialPrompt ?? '');
     _glowController = AnimationController(vsync: this, duration: const Duration(seconds: 3))..repeat(reverse: true);
     _glowAnimation = Tween<double>(begin: 0.3, end: 0.8).animate(CurvedAnimation(parent: _glowController, curve: Curves.easeInOut));
+
+    // Save generated image to dream when provider updates
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<ImageVideoProvider>();
+      provider.addListener(() {
+        if (provider.localImagePath != null && provider.localImagePath!.isNotEmpty) {
+          final dp = context.read<DreamProvider>();
+          final dream = dp.latestDream;
+          if (dream != null && dream.imageUrl != provider.localImagePath) {
+            dream.imageUrl = provider.localImagePath;
+            dp.updateDream(dream);
+          }
+        }
+      });
+    });
   }
 
   @override
@@ -120,47 +135,22 @@ class _ImageVideoPageState extends State<ImageVideoPage> with SingleTickerProvid
               Consumer<ImageVideoProvider>(
                 builder: (_, provider, __) {
                   if (provider.localImagePath != null && provider.localImagePath!.isNotEmpty) {
-                    // Save image path to current dream
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      final dp = context.read<DreamProvider>();
-                      final dream = dp.latestDream;
-                      if (dream != null && dream.imageUrl != provider.localImagePath) {
-                        dream.imageUrl = provider.localImagePath;
-                        dp.updateDream(dream);
-                      }
-                    });
-
                     return Column(
                       children: [
-                        AnimatedBuilder(
-                          animation: _glowAnimation,
-                          builder: (_, child) => Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppTheme.primary.withOpacity(_glowAnimation.value * 0.3),
-                                  blurRadius: 30, spreadRadius: 5,
-                                ),
-                              ],
-                            ),
-                            child: child,
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child: Image.file(
-                              File(provider.localImagePath!),
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(
-                                height: 200,
-                                decoration: BoxDecoration(
-                                  color: const Color(0x0AFFFFFF),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(color: AppTheme.line),
-                                ),
-                                child: const Center(child: Text('图片加载失败', style: TextStyle(color: AppTheme.muted))),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: Image.file(
+                            File(provider.localImagePath!),
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              height: 200,
+                              decoration: BoxDecoration(
+                                color: const Color(0x0AFFFFFF),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: AppTheme.line),
                               ),
+                              child: const Center(child: Text('图片加载失败', style: TextStyle(color: AppTheme.muted))),
                             ),
                           ),
                         ),
