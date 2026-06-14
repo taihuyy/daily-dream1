@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 class AppTheme {
   static const Color bg = Color(0xFF0A1020);
   static const Color bgSoft = Color(0xFF101833);
-  static const Color panel = Color(0xEEE11934);
+  static const Color panel = Color(0xEE121934);
   static const Color panelStrong = Color(0xF51A244A);
   static const Color text = Color(0xFFEEF1FF);
   static const Color muted = Color(0xFF9EA8D5);
@@ -29,7 +29,6 @@ class AppTheme {
         primary: primary,
         secondary: primary2,
         surface: bg,
-        background: bg,
       ),
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
@@ -43,7 +42,7 @@ class AppTheme {
         iconTheme: IconThemeData(color: text),
       ),
       cardTheme: CardThemeData(
-        color: const Color(0xEE121934),
+        color: panel,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
@@ -57,10 +56,6 @@ class AppTheme {
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-          ),
-          textStyle: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
           ),
         ),
       ),

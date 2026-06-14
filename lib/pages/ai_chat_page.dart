@@ -50,7 +50,6 @@ class _AiChatPageState extends State<AiChatPage> {
       body: DreamBackground(
         child: Stack(
           children: [
-            const DreamParticles(count: 10, color: AppTheme.primary2),
             SafeArea(
               child: Column(
                 children: [

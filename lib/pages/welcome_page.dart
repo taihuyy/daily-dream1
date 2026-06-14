@@ -11,10 +11,6 @@ class WelcomePage extends StatelessWidget {
       body: DreamBackground(
         child: Stack(
           children: [
-            // Floating particles
-            const DreamParticles(count: 25, color: AppTheme.primary),
-
-            // Breathing glow orbs
             Positioned(
               top: MediaQuery.of(context).size.height * 0.15,
               left: MediaQuery.of(context).size.width * 0.1,
@@ -65,7 +61,7 @@ class WelcomePage extends StatelessWidget {
                       child: Text(
                         '醒来后，别让梦悄悄消失。\n用 AI 帮你把模糊的碎片回忆、整理、生成并留下来。',
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 15, height: 1.6, color: Colors.white.withOpacity(0.76)),
+                        style: TextStyle(fontSize: 15, height: 1.6, color: Colors.white.withValues(alpha: 0.76)),
                       ),
                     ),
                     const SizedBox(height: 32),

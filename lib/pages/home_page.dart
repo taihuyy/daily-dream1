@@ -17,8 +17,6 @@ class HomePage extends StatelessWidget {
       body: DreamBackground(
         child: Stack(
           children: [
-            const DreamParticles(count: 15, color: AppTheme.primary2),
-
             SafeArea(
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(18, 8, 18, 120),

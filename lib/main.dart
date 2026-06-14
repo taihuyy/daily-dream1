@@ -30,31 +30,54 @@ void main() async {
     statusBarIconBrightness: Brightness.light,
   ));
 
-  // Open ALL boxes first, before anything else
-  await Hive.initFlutter();
-  final dreamsBox = await Hive.openBox('dreams');
-  await Hive.openBox('user');
-  final settingsBox = await Hive.openBox('settings');
+  try {
+    await Hive.initFlutter();
+    final dreamsBox = await Hive.openBox('dreams');
+    await Hive.openBox('user');
+    final settingsBox = await Hive.openBox('settings');
 
-  // Now create services
-  final settings = SettingsService(settingsBox);
-  await settings.init();
+    final settings = SettingsService(settingsBox);
+    await settings.init();
 
-  final tongyiService = TongyiWanxiangService(
-    apiKey: settings.dashscopeApiKey,
-    host: settings.dashscopeHost,
-    model: settings.imageModel,
-  );
+    final tongyiService = TongyiWanxiangService(
+      apiKey: settings.dashscopeApiKey,
+      host: settings.dashscopeHost,
+      model: settings.imageModel,
+    );
 
-  // Create providers AFTER boxes are open
-  final dreamProvider = DreamProvider(dreamsBox);
-  dreamProvider.loadFromHive(); // Load once, NOT in build
+    final dreamProvider = DreamProvider(dreamsBox);
+    dreamProvider.loadFromHive();
 
-  runApp(DailyDreamApp(
-    settings: settings,
-    tongyiService: tongyiService,
-    dreamProvider: dreamProvider,
-  ));
+    runApp(DailyDreamApp(
+      settings: settings,
+      tongyiService: tongyiService,
+      dreamProvider: dreamProvider,
+    ));
+  } catch (e, stack) {
+    debugPrint('=== APP STARTUP ERROR ===');
+    debugPrint('$e');
+    debugPrint('$stack');
+    runApp(MaterialApp(
+      home: Scaffold(
+        backgroundColor: const Color(0xFF0A1020),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.error_outline, color: Colors.redAccent, size: 48),
+                const SizedBox(height: 16),
+                const Text('启动出错', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 12),
+                Text('$e', style: const TextStyle(color: Colors.white70, fontSize: 13), textAlign: TextAlign.center),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ));
+  }
 }
 
 class DailyDreamApp extends StatelessWidget {
