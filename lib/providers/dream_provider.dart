@@ -4,7 +4,7 @@ import '../models/dream.dart';
 import '../data/mock_data.dart';
 
 class DreamProvider extends ChangeNotifier {
-  late Box _box;
+  final Box _box;
   List<Dream> _dreams = [];
 
   List<Dream> get dreams => _dreams;
@@ -14,13 +14,7 @@ class DreamProvider extends ChangeNotifier {
   int get totalDreams => _dreams.length;
   int get totalShares => _dreams.where((d) => d.isPublished).length;
 
-  DreamProvider() {
-    try {
-      _box = Hive.box('dreams');
-    } catch (_) {
-      _box = Hive.box('dreams');
-    }
-  }
+  DreamProvider(this._box);
 
   void loadFromHive() {
     try {

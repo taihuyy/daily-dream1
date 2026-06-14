@@ -1,23 +1,19 @@
 import 'package:hive/hive.dart';
 
 class SettingsService {
-  static const _boxName = 'settings';
-  static const _keyApiKey = 'api_key';
-  static const _keyBaseUrl = 'base_url';
-  static const _keyModel = 'model';
-  static const _keyImageModel = 'image_model';
-  static const _keySystemPrompt = 'system_prompt';
   static const _keyMiMoApiKey = 'mimo_api_key';
   static const _keyMiMoBaseUrl = 'mimo_base_url';
   static const _keyMiMoModel = 'mimo_model';
+  static const _keySystemPrompt = 'system_prompt';
   static const _keyDashscopeApiKey = 'dashscope_api_key';
   static const _keyDashscopeHost = 'dashscope_host';
+  static const _keyImageModel = 'image_model';
 
-  late Box _box;
+  final Box _box;
+
+  SettingsService(this._box);
 
   Future<void> init() async {
-    _box = await Hive.openBox(_boxName);
-    // MiMo defaults (verified working)
     if (_box.get(_keyMiMoApiKey) == null) {
       await _box.put(_keyMiMoApiKey, 'tp-c6a3t7d2ce7ex92jyw2xer8obkp4i2oms7n0jn3sbhmb11yd');
     }
@@ -30,7 +26,6 @@ class SettingsService {
     if (_box.get(_keySystemPrompt) == null) {
       await _box.put(_keySystemPrompt, _defaultPrompt);
     }
-    // DashScope defaults (verified working)
     if (_box.get(_keyDashscopeApiKey) == null) {
       await _box.put(_keyDashscopeApiKey, 'sk-ws-H.IRREIM.o7EL.MEUCIDUSIjlmET2w_QkXBWQYAlxyrFkqkTWRkRYmFWImYWMPAiEApwLdMEGA_ycV1l9ri_KcbWyA2Ee3ST4sr9lhS-EGmqs');
     }
@@ -42,18 +37,14 @@ class SettingsService {
     }
   }
 
-  // MiMo config
   String get mimoApiKey => _box.get(_keyMiMoApiKey, defaultValue: '');
   String get mimoBaseUrl => _box.get(_keyMiMoBaseUrl, defaultValue: 'https://token-plan-cn.xiaomimimo.com/v1');
   String get mimoModel => _box.get(_keyMiMoModel, defaultValue: 'mimo-v2.5');
   String get systemPrompt => _box.get(_keySystemPrompt, defaultValue: _defaultPrompt);
-
-  // DashScope config
   String get dashscopeApiKey => _box.get(_keyDashscopeApiKey, defaultValue: '');
   String get dashscopeHost => _box.get(_keyDashscopeHost, defaultValue: 'https://dashscope-intl.aliyuncs.com');
   String get imageModel => _box.get(_keyImageModel, defaultValue: 'qwen-image-2.0-pro');
 
-  // Legacy aliases
   String get apiKey => mimoApiKey;
   String get baseUrl => mimoBaseUrl;
   String get model => mimoModel;
@@ -69,7 +60,6 @@ class SettingsService {
   Future<void> setDashscopeHost(String v) => _box.put(_keyDashscopeHost, v);
   Future<void> setImageModel(String v) => _box.put(_keyImageModel, v);
 
-  // Legacy setters
   Future<void> setApiKey(String v) => setMiMoApiKey(v);
   Future<void> setBaseUrl(String v) => setMiMoBaseUrl(v);
   Future<void> setModel(String v) => setMiMoModel(v);

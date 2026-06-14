@@ -30,16 +30,14 @@ void main() async {
     statusBarIconBrightness: Brightness.light,
   ));
 
-  try {
-    await Hive.initFlutter();
-    await Hive.openBox('dreams');
-    await Hive.openBox('user');
-    await Hive.openBox('settings');
-  } catch (e) {
-    debugPrint('Hive init error: $e');
-  }
+  // Open ALL boxes first, before anything else
+  await Hive.initFlutter();
+  final dreamsBox = await Hive.openBox('dreams');
+  await Hive.openBox('user');
+  final settingsBox = await Hive.openBox('settings');
 
-  final settings = SettingsService();
+  // Now create services
+  final settings = SettingsService(settingsBox);
   await settings.init();
 
   final tongyiService = TongyiWanxiangService(
@@ -48,19 +46,33 @@ void main() async {
     model: settings.imageModel,
   );
 
-  runApp(DailyDreamApp(settings: settings, tongyiService: tongyiService));
+  // Create providers AFTER boxes are open
+  final dreamProvider = DreamProvider(dreamsBox);
+  dreamProvider.loadFromHive(); // Load once, NOT in build
+
+  runApp(DailyDreamApp(
+    settings: settings,
+    tongyiService: tongyiService,
+    dreamProvider: dreamProvider,
+  ));
 }
 
 class DailyDreamApp extends StatelessWidget {
   final SettingsService settings;
   final TongyiWanxiangService tongyiService;
-  const DailyDreamApp({super.key, required this.settings, required this.tongyiService});
+  final DreamProvider dreamProvider;
+  const DailyDreamApp({
+    super.key,
+    required this.settings,
+    required this.tongyiService,
+    required this.dreamProvider,
+  });
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => DreamProvider()..loadFromHive()),
+        ChangeNotifierProvider.value(value: dreamProvider),
         ChangeNotifierProvider(create: (_) => ChatProvider(settings)),
         ChangeNotifierProvider(create: (_) => ImageVideoProvider(tongyiService)),
         Provider.value(value: settings),
@@ -69,22 +81,6 @@ class DailyDreamApp extends StatelessWidget {
         title: '每日梦境',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.darkTheme,
-        builder: (context, child) {
-          ErrorWidget.builder = (error) => Material(
-            color: const Color(0xFF0A1020),
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(
-                  '加载中...\n$error',
-                  style: const TextStyle(color: Colors.white70, fontSize: 14),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-          );
-          return child ?? const SizedBox.shrink();
-        },
         home: const WelcomePage(),
       ),
     );
