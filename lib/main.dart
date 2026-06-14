@@ -104,7 +104,22 @@ class DailyDreamApp extends StatelessWidget {
         title: '每日梦境',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.darkTheme,
-        home: const WelcomePage(),
+        initialRoute: '/welcome',
+        routes: {
+          '/welcome': (_) => const WelcomePage(),
+          '/home': (_) => const HomePage(),
+          '/record-choice': (_) => const RecordChoicePage(),
+          '/record-text': (_) => const RecordTextPage(),
+          '/record-voice': (_) => const RecordVoicePage(),
+          '/ai-chat': (_) => const AiChatPage(),
+          '/result': (_) => const ResultPage(),
+          '/image-video': (_) => const ImageVideoPage(),
+          '/publish': (_) => const PublishPage(),
+          '/square': (_) => const SquarePage(),
+          '/dream-detail': (_) => const DreamDetailPage(),
+          '/profile': (_) => const ProfilePage(),
+          '/settings': (_) => SettingsPage(settings: settings),
+        },
       ),
     );
   }
