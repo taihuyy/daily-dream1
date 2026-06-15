@@ -2,18 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  static const Color bg = Color(0xFF0A1020);
-  static const Color bgSoft = Color(0xFF101833);
-  static const Color panel = Color(0xEE121934);
-  static const Color panelStrong = Color(0xF51A244A);
+  static const Color bg = Color(0xFF090D1A);
+  static const Color bgDeep = Color(0xFF040713);
+  static const Color bgSoft = Color(0xFF11172A);
+  static const Color dusk = Color(0xFF241C3E);
+  static const Color panel = Color(0xD8121830);
+  static const Color panelStrong = Color(0xEF17213F);
+  static const Color glass = Color(0x22FFFFFF);
+  static const Color glassStrong = Color(0x34FFFFFF);
   static const Color text = Color(0xFFEEF1FF);
-  static const Color muted = Color(0xFF9EA8D5);
-  static const Color line = Color(0x14FFFFFF);
-  static const Color primary = Color(0xFF8A7DFF);
-  static const Color primary2 = Color(0xFF5DE1FF);
-  static const Color success = Color(0xFF63E0A4);
+  static const Color muted = Color(0xFFAAB3D9);
+  static const Color line = Color(0x20FFFFFF);
+  static const Color primary = Color(0xFF8F87FF);
+  static const Color primary2 = Color(0xFF5BD8E8);
+  static const Color moon = Color(0xFFF4D68D);
+  static const Color rose = Color(0xFFFF8FB3);
+  static const Color mint = Color(0xFF7CE5B4);
+  static const Color success = Color(0xFF70E2A8);
   static const Color warning = Color(0xFFFFCA7A);
-  static const Color chip = Color(0x288A7DFF);
+  static const Color chip = Color(0x2A8F87FF);
+  static const Color shadow = Color(0x99040713);
 
   static ThemeData get darkTheme {
     final textTheme = GoogleFonts.notoSansScTextTheme().apply(
@@ -45,18 +53,19 @@ class AppTheme {
         color: panel,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(18),
           side: const BorderSide(color: line),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: primary,
+          backgroundColor: moon,
           foregroundColor: const Color(0xFF08101C),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
+          textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
